@@ -62,15 +62,102 @@ const ConferenceEvent = () => {
     }
   };
 
+
+  // we have to populate this list, with the items 
+  // that have been selected from each category 
   const getItemsFromTotalCost = () => {
     const items = [];
+
+    // go over the items for the venue and add the ones 
+    // that they have more quantity to this list 
+    venueItems.forEach((item) => {
+
+      // if the quantity of this item is higher than 1, then add it to the list 
+      if (item.quantity > 0)
+
+        // take a copy from the dictionary and add a new field for type to it 
+        items.push({ ...item, type: 'venue' });
+    });
+
+
+    // go over the items for the add-ons
+    avItems.forEach((item) => {
+
+      // if the quantity is higher than 0 and has not been already added to the list
+      // then add this item to the list 
+      if (item.quantity > 0 && !items.some((i) => i.name === item.name && i.type === "av")) {
+
+        // take a copy from the properties in the list and add a type to the properties 
+        items.push({ ...item, type: "av" });
+      }
+    });
+
+
+    // go over the meals 
+    mealsItems.forEach((item) => {
+
+      // if the meal has been selected 
+      if (item.selected) {
+
+        // take a copy of its properties and add the type property as well 
+        const itemForDisplay = { ...item, type: "meals" };
+
+        // if there was also a number of people property for that item 
+        // add that to the properties as well 
+        if (item.numberOfPeople) {
+          itemForDisplay.numberOfPeople = numberOfPeople;
+        }
+
+        // push the information of the property to the list 
+        items.push(itemForDisplay);
+      }
+    });
+    return items;
   };
 
+
+  // call the function to get the items to be displayed
   const items = getItemsFromTotalCost();
 
-  const ItemsDisplay = ({ items }) => {
 
+  // this function given the list of items to be displayed, will display them 
+  const ItemsDisplay = ({ items }) => {
+    console.log(items);
+    return <>
+      <div className="display_box1">
+        {items.length === 0 && <p>No items selected</p>}
+        <table className="table_item_data">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Unit Cost</th>
+              <th>Quantity</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, index) => (
+              <tr key={index}>
+                <td>{item.name}</td>
+                <td>${item.cost}</td>
+                <td>
+                  {item.type === "meals" || item.numberOfPeople
+                    ? ` For ${numberOfPeople} people`
+                    : item.quantity}
+                </td>
+                <td>{item.type === "meals" || item.numberOfPeople
+                  ? `${item.cost * numberOfPeople}`
+                  : `${item.cost * item.quantity}`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   };
+
+
   const calculateTotalCost = (section) => {
     let totalCost = 0;
     if (section === "venue") {
@@ -88,12 +175,12 @@ const ConferenceEvent = () => {
     }
 
     // compute the total cost for the meals if we want the cost of the meals 
-    else if(section == 'meals'){
+    else if (section == 'meals') {
       // go over the meals items and multiply the price of each, with the number of the people inserted
       mealsItems.forEach((item) => {
-        
+
         // if that item is currently selected, then consider it 
-        if(item.selected)
+        if (item.selected)
           totalCost += item.cost * numberOfPeople
       })
     }
@@ -106,7 +193,15 @@ const ConferenceEvent = () => {
   const avTotalCost = calculateTotalCost('av');
 
   // a variable in order to compute the total cost for the meals 
-  const mealsTotalCost = calculateTotalCost('meals'); 
+  const mealsTotalCost = calculateTotalCost('meals');
+
+  // an object for storing the details of the total costs 
+  // that has all of the costs 
+  const totalCosts = {
+    venue: venueTotalCost,
+    av: avTotalCost,
+    meals: mealsTotalCost
+  };
 
   const navigateToProducts = (idType) => {
     if (idType == '#venue' || idType == '#addons' || idType == '#meals') {
@@ -263,11 +358,7 @@ const ConferenceEvent = () => {
             <TotalCost totalCosts={totalCosts} handleClick={handleToggleItems} ItemsDisplay={() => <ItemsDisplay items={items} />} />
           </div>
         )
-        }
-
-
-
-
+        };
       </div>
     </>
 
